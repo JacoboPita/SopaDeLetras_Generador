@@ -9,12 +9,13 @@ def generar_sopa(palabras, x, y):
     sopa = [['' for _ in range(x)] for _ in range(y)]
     palabras_posiciones = []
 
-    def colocar_palabra(palabra):
+    def colocar_palabra(palabra, direcciones_base):
         longitud = len(palabra)
         colocado = False
+
         while not colocado:
-            orientacion = random.choice(['H', 'V', 'D', 'H2', 'V2', 'D2'])
-            if orientacion in ['H2', 'V2', 'D2']:
+            orientacion = random.choice(direcciones_base)
+            if orientacion in ['H2', 'V2', 'D2abajo', 'D2arriba']:
                 palabra = ''.join(reversed(palabra))
 
             if orientacion == 'H' or orientacion == 'H2':
@@ -33,27 +34,44 @@ def generar_sopa(palabras, x, y):
                         sopa[fila + i][columna] = letra
                     colocado = True
                     palabras_posiciones.append((palabra, (fila, columna), 'V'))
-            elif orientacion == 'D' or orientacion == 'D2':
-                orientacion = random.choice(['Arriba', 'Abajo'])
-                if orientacion == 'Arriba':
-                    fila = random.randint(0, y - longitud)
-                    columna = random.randint(longitud, x - 1)
-                    if all(sopa[fila + i][columna - i] in ('', letra) for i, letra in enumerate(palabra)):
-                        for i, letra in enumerate(palabra):
-                            sopa[fila + i][columna - i] = letra
-                        colocado = True
-                        palabras_posiciones.append((palabra, (fila, columna), 'Darriba'))
-                if orientacion == 'Abajo':
-                    fila = random.randint(0, y - longitud)
-                    columna = random.randint(0, x - longitud)
-                    if all(sopa[fila + i][columna + i] in ('', letra) for i, letra in enumerate(palabra)):
-                        for i, letra in enumerate(palabra):
-                            sopa[fila + i][columna + i] = letra
-                        colocado = True
-                        palabras_posiciones.append((palabra, (fila, columna), 'Dabajo'))
+            elif orientacion == 'Darriba' or orientacion == 'D2arriba':
+                fila = random.randint(0, y - longitud)
+                columna = random.randint(longitud, x - 1)
+                if all(sopa[fila + i][columna - i] in ('', letra) for i, letra in enumerate(palabra)):
+                    for i, letra in enumerate(palabra):
+                        sopa[fila + i][columna - i] = letra
+                    colocado = True
+                    palabras_posiciones.append((palabra, (fila, columna), 'Darriba'))
+            elif orientacion == 'Dabajo' or orientacion == 'D2abajo':
+                fila = random.randint(0, y - longitud)
+                columna = random.randint(0, x - longitud)
+                if all(sopa[fila + i][columna + i] in ('', letra) for i, letra in enumerate(palabra)):
+                    for i, letra in enumerate(palabra):
+                        sopa[fila + i][columna + i] = letra
+                    colocado = True
+                    palabras_posiciones.append((palabra, (fila, columna), 'Dabajo'))
+
+    direcciones_base = ['H', 'V']
+
+    print("El modelo base implementa Horizontales y Verticales.")
+    dabajo = True if input("Deseas añadir diagonales hacia abajo (S/N)?") in ['S', 's'] else False
+    darriba = True if input("Deseas añadir diagonales hacia arriba (S/N)?") in ('S', 's') else False
+    reverse = True if input("Deseas invertir la dirección de las palabras (S/N)?") in ('S', 's') else False
+
+    if dabajo:
+        direcciones_base.append('Dabajo')
+    if darriba:
+        direcciones_base.append('Darriba')
+    if reverse:
+        direcciones_base.append('H2')
+        direcciones_base.append('V2')
+        if dabajo:
+            direcciones_base.append('D2abajo')
+        if darriba:
+            direcciones_base.append('D2arriba')
 
     for palabra in palabras:
-        colocar_palabra(palabra)
+        colocar_palabra(palabra, direcciones_base)
 
     for i in range(y):
         for j in range(x):
@@ -130,23 +148,25 @@ os.makedirs(carpeta, 0o777, True)
 os.chdir(carpeta)
 titulo = input("¿Cómo quieres llamar a esta sopa? ")
 cantidad: int = int(input("¿Cuántas palabras deseas poner? "))
+
 palabras = ['' for i in range(cantidad)]
 print("Lista de palabras a encontrar: ")
 for i in range(cantidad):
-    palabras[i] = input()
+    palabras[i] = input().upper()
 palabras.sort()
 
 base_name = "palabras"
 extension = ".txt"
 siguiente = encontrar_siguiente(base_name, extension)
 filename = base_name + '_' + str(siguiente) + extension
-
 with open(filename, "w") as file:
     file.write(titulo + "\n\n")
     for palabra in palabras:
         file.write(palabra + "\n")
+
 x: int = int(input("¿Cuántas filas quieres? "))
 y: int = int(input("¿Cuántas columnas quieres? "))
+
 sopa, palabras_posiciones = generar_sopa(palabras, x, y)
 sopa_a_pdf(sopa, "sopa", False)
 sopa_a_pdf(sopa, "solucionario", palabras_posiciones)
